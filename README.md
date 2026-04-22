@@ -1,6 +1,6 @@
 # Perencana Fiber Bandung Raya
 
-Dashboard interaktif perencanaan infrastruktur fixed broadband berbasis demand untuk **Kota Bandung, Kota Cimahi, dan Kabupaten Bandung Barat** — studi kasus metodologi geospasial dengan 4.300+ titik minat.
+Dashboard interaktif perencanaan infrastruktur fixed broadband berbasis demand untuk **Kota Bandung, Kota Cimahi, dan Kabupaten Bandung Barat**, studi kasus metodologi geospasial dengan 4.300+ titik minat.
 
 Dibuat oleh **Muhammad Rafi Ar-Rantisi** · Institut Teknologi Bandung.
 
