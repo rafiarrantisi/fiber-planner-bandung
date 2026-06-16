@@ -47,3 +47,24 @@ export function formatDistance(meters: number): string {
   }
   return `${Math.round(meters)} m`
 }
+
+// ── Formatter v2 (constraint-aware engine) ──────────────────────────
+
+/** Selalu dalam km (untuk total feeder/backbone). */
+export function formatKm(meters: number): string {
+  return `${(meters / 1000).toFixed(1).replace('.', ',')} km`
+}
+
+/** Payback dalam bulan → "x bln" atau "x,y thn" bila panjang. */
+export function formatMonths(months: number | null): string {
+  if (months === null || !Number.isFinite(months)) return '—'
+  if (months >= 24) {
+    return `${(months / 12).toFixed(1).replace('.', ',')} thn`
+  }
+  return `${Math.round(months)} bln`
+}
+
+/** Capex ringkas (alias semantik dari formatIdrCompact untuk konteks capex). */
+export function formatCapexIdr(value: number): string {
+  return formatIdrCompact(value)
+}

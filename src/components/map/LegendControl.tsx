@@ -1,4 +1,13 @@
-import { CATEGORY_LABELS, type PoICategory } from '@/types/domain'
+import { useMemo } from 'react'
+import {
+  CATEGORY_LABELS,
+  CONSTRAINT_CATEGORY_LABELS,
+  type ConstraintCategory,
+  type PoICategory,
+} from '@/types/domain'
+import { useConstraintStore } from '@/store/constraints'
+import { useMapUiStore } from '@/store/map-ui'
+import { CONSTRAINT_COLORS } from '@/lib/constraint-style'
 
 const ORDER: PoICategory[] = [
   'PENDIDIKAN',
@@ -18,9 +27,41 @@ const COLORS: Record<PoICategory, string> = {
   MENARA_NON_FIBER: '#64748b',
 }
 
+function ConstraintLegend() {
+  const features = useConstraintStore((s) => s.features)
+  const show = useMapUiStore((s) => s.v2Layers.showConstraints)
+  const present = useMemo(() => {
+    const set = new Set<ConstraintCategory>()
+    for (const f of features) set.add(f.properties.category)
+    return [...set].sort()
+  }, [features])
+
+  if (!show || present.length === 0) return null
+
+  return (
+    <>
+      <div className="rule-line" />
+      <div className="text-[10px] uppercase tracking-wider text-ink-subtle font-medium">
+        Kendala (RoW)
+      </div>
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+        {present.map((c) => (
+          <div key={c} className="flex items-center gap-2 text-ink-muted">
+            <span
+              className="h-2.5 w-2.5 rounded-sm"
+              style={{ background: CONSTRAINT_COLORS[c] }}
+            />
+            <span className="truncate">{CONSTRAINT_CATEGORY_LABELS[c]}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
 export function LegendControl() {
   return (
-    <div className="absolute bottom-6 left-6 z-[400] editorial-card px-4 py-3 text-xs space-y-2 w-[240px]">
+    <div className="absolute bottom-6 left-6 z-[400] editorial-card px-4 py-3 text-xs space-y-2 w-[240px] max-h-[60%] overflow-y-auto">
       <div className="text-[10px] uppercase tracking-wider text-ink-subtle font-medium">
         Legenda
       </div>
@@ -58,6 +99,7 @@ export function LegendControl() {
           <span>Rekomendasi ODP baru</span>
         </div>
       </div>
+      <ConstraintLegend />
     </div>
   )
 }

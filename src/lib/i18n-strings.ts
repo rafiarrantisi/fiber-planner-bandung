@@ -77,17 +77,154 @@ export const STRINGS = {
   },
   methodology: {
     title: 'Metodologi',
+    heading: 'Enam pilar: dari optimasi geometris ke perencanaan yang buildable & bankable',
+    tagline:
+      'Bukan sekadar dashboard geospasial — perencana rollout fixed broadband yang sadar kendala konstruksi & ekonomi.',
     bufferRationale:
       'Radius 200 m mengikuti rekomendasi APJATEL untuk jangkauan layanan ODP di area urban.',
     clusterRationale:
       'Batas 300 m antar-anggota klaster memastikan kandidat lokasi ODP baru dapat melayani seluruh anggota dalam radius operasional drop cable.',
     capacityRationale:
       'Estimasi kapasitas dan revenue mengikuti rata-rata enterprise bandwidth untuk tiap subtype institusi publik.',
+    pillars: [
+      {
+        title: 'Constraint layer (RoW)',
+        body: 'Permitting adalah penghambat #1 deployment. Layer KKOP, cagar budaya, militer, RoW kereta/tol/HSR, sungai — hard-block vs soft-penalty — yang dipatuhi routing.',
+      },
+      {
+        title: 'Cost-aware routing',
+        body: 'Underground ≈ 2,5× aerial, boring lebih mahal lagi. A* mencari rute paling murah dibangun (cheapest-to-build), bukan terpendek, di atas road graph ter-tag biaya.',
+      },
+      {
+        title: 'Capacity-aware ODP + snap-to-road',
+        body: 'K-means dipecah berdasarkan kapasitas port (8/16) maupun radius; centroid di-snap ke node jalan valid (bukan atap/sungai) dengan validasi drop.',
+      },
+      {
+        title: 'Topologi feeder/backbone',
+        body: 'FTTH itu hierarki OLT→feeder→ODP→drop. MST cost-weighted menyambungkan tiap ODP ke POP terdekat di atas road graph; total feeder km terukur.',
+      },
+      {
+        title: 'Demand & whitespace',
+        body: 'PoI ≠ demand. Homes-passed dihitung dari grid populasi; skor whitespace memisahkan area underserved dari yang sudah overbuild incumbent.',
+      },
+      {
+        title: 'Capex, ROI & fasing',
+        body: 'Unit economics per cluster — payback, NPV, ROI — lalu slider budget capex menyusun Fase 1/2/3 secara greedy: bangun yang balik modal tercepat dulu.',
+      },
+    ],
   },
   about: {
     scope:
       'Showcase metodologi perencanaan infrastruktur fixed broadband berbasis demand — dari supply/demand mapping hingga rekomendasi penempatan ODP baru lewat recursive K-means.',
     disclaimer:
       'Seluruh data pada dashboard ini adalah data dummy hasil sintesis untuk kebutuhan demonstrasi metodologi.',
+  },
+
+  // ════════════════════════════════════════════════════════════════
+  //  Tambahan v2 — constraint-aware & cost-aware rollout engine
+  // ════════════════════════════════════════════════════════════════
+  constraints: {
+    title: 'Kendala Konstruksi',
+    panelTitle: 'Layer Kendala (RoW)',
+    severity: 'Tingkat Kendala',
+    severityAll: 'Semua',
+    severityHard: 'Hard-block',
+    severitySoft: 'Soft-penalty',
+    hardLabel: 'Terlarang (hard)',
+    softLabel: 'Penalti biaya (soft)',
+    summary: '{hard} zona hard-block · {soft} zona soft-penalty',
+    methodForce: 'Metode dipaksa',
+    multiplier: 'Pengali biaya',
+    poiInRestricted: 'PoI di area restricted',
+    realBadge: 'real/derived',
+    approxBadge: 'aproksimasi',
+    syntheticBadge: 'sintetis',
+    forceUnderground: 'wajib bawah tanah',
+    forceBoring: 'wajib boring',
+    forceNone: '—',
+  },
+  cluster: {
+    portCapacity: 'Kapasitas Port',
+    inHardBlock: 'Centroid di zona terlarang (perlu relokasi)',
+    undeliverable: 'drop > batas (perlu ODP tambahan)',
+  },
+  routing: {
+    title: 'Routing Sadar Biaya',
+    method: 'Metode',
+    aerial: 'Udara (tiang)',
+    underground: 'Bawah tanah',
+    boring: 'Boring/HDD',
+    cost: 'Biaya rute',
+    detour: 'Rasio memutar',
+    rerouted: 'Rute memutar menghindari kendala',
+    blocked: 'Tidak ada rute valid (terhalang hard-block)',
+    graphDebug: 'Debug graph jalan',
+  },
+  topology: {
+    title: 'Topologi Feeder',
+    panelTitle: 'Feeder & Backbone',
+    totalFeeder: 'Total Feeder',
+    homingPop: 'Homing ke POP',
+    pop: 'POP',
+    feederLayer: 'Jaringan Feeder (MST)',
+  },
+  demand: {
+    title: 'Permintaan & Whitespace',
+    panelTitle: 'Demand Grid',
+    heatLayer: 'Heatmap Permintaan',
+    modeHousehold: 'Rumah Tangga',
+    modeWhitespace: 'Skor Whitespace',
+    homesPassed: 'Homes Passed',
+    takeUp: 'Take-up',
+    whitespace: 'Whitespace',
+    incumbentNote:
+      'Skor incumbent adalah proxy termodel (bukan footprint kompetitor riil — tidak ada data publik).',
+  },
+  capex: {
+    title: 'Capex, ROI & Fasing',
+    panelTitle: 'Ekonomi & Fasing',
+    budget: 'Budget Capex',
+    totalCapex: 'Total Capex',
+    blendedPayback: 'Payback Blended',
+    homesPassed: 'Total Homes Passed',
+    payback: 'Payback',
+    npv: 'NPV (5 thn)',
+    roi: 'Skor ROI',
+    phase: 'Fase',
+    phaseAll: 'Semua Fase',
+    phase1: 'Fase 1',
+    phase2: 'Fase 2',
+    phase3: 'Fase 3',
+    phaseColors: 'Warnai ODP per Fase',
+    capexByPhase: 'Capex & Revenue per Fase',
+    rankedTable: 'Cluster Diurut ROI',
+    costAssumptions: 'Asumsi Biaya',
+    resetAssumptions: 'Reset ke default',
+    recompute: 'Hitung ulang',
+    constraintImpactTitle: 'Dampak Kendala',
+    constraintImpact:
+      '{rerouted} rute memutar · {blocked} cluster gagal di-snap · +{extra} akibat permit/constraint',
+    extraCost: 'Biaya ekstra akibat constraint',
+  },
+  pipeline: {
+    buffer: 'Buffer 200 m di sekitar supply',
+    classify: 'Klasifikasi PoI: FO-Ready vs Non-FO',
+    cluster: 'Klasterisasi Non-FO (capacity-aware + snap)',
+    route: 'Routing feeder sadar-biaya',
+    topology: 'Membangun topologi feeder (MST→POP)',
+    demand: 'Menghitung homes-passed & whitespace',
+    capex: 'Capex, payback, NPV & fasing',
+    stats: 'Agregasi statistik & KPI',
+  },
+  provenance: {
+    title: 'Provenansi Data',
+    statusReal: 'Real',
+    statusDerived: 'Real (derived)',
+    statusApprox: 'Aproksimasi',
+    statusSynthetic: 'Sintetis',
+    statusModeled: 'Termodel (proxy)',
+    statusIllustrative: 'Ilustratif',
+    tagline:
+      'Data PoI/supply masih sintetis untuk demo metodologi; pipeline menerima sumber apa pun. Constraint layer dibuat real/aproksimasi — di situlah letak masalah yang tool sekelas Comsof pun belum selesaikan.',
   },
 } as const

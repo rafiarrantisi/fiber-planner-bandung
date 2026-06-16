@@ -1,63 +1,84 @@
 import { useCallback } from 'react'
+import * as Comlink from 'comlink'
 import { useDataStore } from '@/store/data'
-import { useAnalysisStore } from '@/store/analysis'
-import { buildSupplyBufferUnion } from '@/analysis/buffer'
-import { classifyPoI } from '@/analysis/spatial-join'
-import { recursiveKMeansByCity } from '@/analysis/kmeans-recursive'
-import { computeStats } from '@/analysis/stats'
+import { useAnalysisStore, type AnalysisStep } from '@/store/analysis'
+import { useConstraintStore } from '@/store/constraints'
+import { getAnalysisWorker } from '@/lib/analysis-worker'
+import { STRINGS } from '@/lib/i18n-strings'
+import type { PipelineProgress, PipelineStep } from '@/analysis/pipeline'
 
-async function nextFrame(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => resolve()))
+const STEP_LABEL: Record<PipelineStep, string> = {
+  buffer: STRINGS.pipeline.buffer,
+  classify: STRINGS.pipeline.classify,
+  cluster: STRINGS.pipeline.cluster,
+  route: STRINGS.pipeline.route,
+  topology: STRINGS.pipeline.topology,
+  demand: STRINGS.pipeline.demand,
+  capex: STRINGS.pipeline.capex,
+  stats: STRINGS.pipeline.stats,
 }
 
-export function useRunAnalysis() {
+export function useRunAnalysis(): () => Promise<void> {
   const data = useDataStore((s) => s.data)
+  const constraints = useConstraintStore((s) => s.features)
   const setStep = useAnalysisStore((s) => s.setStep)
   const setProgress = useAnalysisStore((s) => s.setProgress)
+  const setRunning = useAnalysisStore((s) => s.setRunning)
   const commit = useAnalysisStore((s) => s.commit)
+  const costAssumptions = useAnalysisStore((s) => s.costAssumptions)
+  const budgetIdr = useAnalysisStore((s) => s.budgetIdr)
 
   return useCallback(async () => {
     if (!data) return
-
+    // Cegah run konkuren (StrictMode double-invoke / klik ganda)
+    if (useAnalysisStore.getState().running) return
+    setRunning(true)
     setStep('buffer')
-    setProgress(0.1)
-    await nextFrame()
-    const bufferUnion = buildSupplyBufferUnion(data.supply)
+    setProgress(0.02, STRINGS.pipeline.buffer)
 
-    setStep('classify')
-    setProgress(0.35)
-    await nextFrame()
-    const { classifiedPoi, enrichedSupply } = classifyPoI(
-      data.poi,
-      data.supply,
-      bufferUnion,
-    )
-
-    setStep('cluster')
-    setProgress(0.6)
-    await nextFrame()
-    const nonFo = classifiedPoi.filter((p) => p.foStatus === 'NON_FO')
-    const { clusters, enrichedPoi } = recursiveKMeansByCity(nonFo, data.supply)
-
-    const clusterIdByPoi = new Map(
-      enrichedPoi.map((p) => [p.id, p.clusterId] as const),
-    )
-    const finalPoi = classifiedPoi.map((p) => ({
-      ...p,
-      clusterId: clusterIdByPoi.get(p.id),
-    }))
-
-    setStep('stats')
-    setProgress(0.85)
-    await nextFrame()
-    const result = computeStats(finalPoi, clusters)
-
-    commit({
-      result,
-      bufferUnion,
-      classifiedPoi: finalPoi,
-      enrichedSupply,
-      clusters,
+    const worker = getAnalysisWorker()
+    const onProgress = Comlink.proxy((p: PipelineProgress) => {
+      setStep(p.step as AnalysisStep)
+      setProgress(p.pct, STEP_LABEL[p.step])
     })
-  }, [data, setStep, setProgress, commit])
+
+    try {
+      const res = await worker.runAnalysis(
+        {
+          poi: data.poi,
+          supply: data.supply,
+          popSites: data.popSites,
+          demandGrid: data.demandGrid,
+          roadGraph: data.roadGraph,
+          constraints,
+          assumptions: costAssumptions,
+          budgetIdr,
+        },
+        onProgress,
+      )
+      commit({
+        result: res.result,
+        bufferUnion: res.bufferUnion,
+        classifiedPoi: res.classifiedPoi,
+        enrichedSupply: res.enrichedSupply,
+        clusters: res.clusters,
+        topology: res.topology,
+        capex: res.capex,
+        constraintImpact: res.constraintImpact,
+      })
+    } catch (err) {
+      setRunning(false)
+      setStep('idle')
+      throw err instanceof Error ? err : new Error('Analisis gagal')
+    }
+  }, [
+    data,
+    constraints,
+    costAssumptions,
+    budgetIdr,
+    setStep,
+    setProgress,
+    setRunning,
+    commit,
+  ])
 }

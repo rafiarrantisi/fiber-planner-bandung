@@ -1,5 +1,30 @@
 import type { FeatureCollection, Polygon, MultiPolygon, LineString } from 'geojson'
-import type { PoI, SupplyPoint, FiberCable } from '@/types/domain'
+import type {
+  PoI,
+  SupplyPoint,
+  FiberCable,
+  RoadGraphData,
+  PopSite,
+  ConstraintFeature,
+  ConstraintProps,
+  DemandFeature,
+  IncumbentFeature,
+} from '@/types/domain'
+
+/**
+ * Fetch JSON yang boleh tidak ada (file v2 di-generate bertahap).
+ * Mengembalikan `fallback` jika 404 / gagal — degradasi anggun (§1.9),
+ * app harus selalu bisa jalan walau layer real belum di-generate.
+ */
+async function fetchOptional<T>(url: string, fallback: T): Promise<T> {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return fallback
+    return (await res.json()) as T
+  } catch {
+    return fallback
+  }
+}
 
 export type BoundaryCollection = FeatureCollection<
   Polygon | MultiPolygon,
@@ -47,19 +72,80 @@ export async function loadFiberCables(): Promise<FiberCable[]> {
   }))
 }
 
+// ── Loader v2 (degradasi anggun bila file belum di-generate) ─────────
+
+export async function loadRoadGraph(): Promise<RoadGraphData | null> {
+  return fetchOptional<RoadGraphData | null>('/data/road-graph.json', null)
+}
+
+export async function loadPopSites(): Promise<PopSite[]> {
+  return fetchOptional<PopSite[]>('/data/pop-sites.json', [])
+}
+
+export async function loadConstraints(): Promise<ConstraintFeature[]> {
+  const fc = await fetchOptional<FeatureCollection<
+    Polygon | MultiPolygon,
+    ConstraintProps
+  > | null>('/data/constraints.geojson', null)
+  return (fc?.features as ConstraintFeature[] | undefined) ?? []
+}
+
+export async function loadDemandGrid(): Promise<DemandFeature[]> {
+  const fc = await fetchOptional<FeatureCollection<
+    Polygon,
+    DemandFeature['properties']
+  > | null>('/data/population-grid.geojson', null)
+  return (fc?.features as DemandFeature[] | undefined) ?? []
+}
+
+export async function loadIncumbentGrid(): Promise<IncumbentFeature[]> {
+  const fc = await fetchOptional<FeatureCollection<
+    Polygon,
+    IncumbentFeature['properties']
+  > | null>('/data/incumbent-coverage.geojson', null)
+  return (fc?.features as IncumbentFeature[] | undefined) ?? []
+}
+
 export interface AllData {
   boundaries: BoundaryCollection
   poi: PoI[]
   supply: SupplyPoint[]
   cables: FiberCable[]
+  // ── v2 (opsional; [] / null bila belum di-generate) ──
+  roadGraph: RoadGraphData | null
+  popSites: PopSite[]
+  demandGrid: DemandFeature[]
+  incumbentGrid: IncumbentFeature[]
 }
 
 export async function loadAll(): Promise<AllData> {
-  const [boundaries, poi, supply, cables] = await Promise.all([
+  const [
+    boundaries,
+    poi,
+    supply,
+    cables,
+    roadGraph,
+    popSites,
+    demandGrid,
+    incumbentGrid,
+  ] = await Promise.all([
     loadBoundaries(),
     loadPoI(),
     loadSupply(),
     loadFiberCables(),
+    loadRoadGraph(),
+    loadPopSites(),
+    loadDemandGrid(),
+    loadIncumbentGrid(),
   ])
-  return { boundaries, poi, supply, cables }
+  return {
+    boundaries,
+    poi,
+    supply,
+    cables,
+    roadGraph,
+    popSites,
+    demandGrid,
+    incumbentGrid,
+  }
 }

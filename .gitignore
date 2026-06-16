@@ -12,8 +12,11 @@ dist
 dist-ssr
 *.local
 
-# Data generation cache (OSRM + boundaries)
+# Data generation cache (OSRM + Overpass + boundaries)
 scripts/.cache/
+
+# Local agent / preview tooling
+.claude/
 
 # Editor directories and files
 .vscode/*

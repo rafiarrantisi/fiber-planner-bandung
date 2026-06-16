@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { STRINGS } from '@/lib/i18n-strings'
+import { ProvenanceTable } from './ProvenanceTable'
 
 interface Props {
   open: boolean
@@ -24,7 +25,7 @@ export function AboutModal({ open, onClose }: Props) {
             exit={{ scale: 0.96, y: 12, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-paper-card rounded-xl shadow-floatCard border border-line w-[620px] max-w-full p-8"
+            className="bg-paper-card rounded-xl shadow-floatCard border border-line w-[680px] max-w-full p-8 max-h-[88vh] overflow-y-auto"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -70,15 +71,30 @@ export function AboutModal({ open, onClose }: Props) {
                 </div>
                 <p>
                   React · TypeScript · Vite · Leaflet · Turf.js · ml-kmeans ·
-                  Recharts · Tailwind · Framer Motion · Zustand · OSRM
+                  ngraph (A* cost-weighted) · Flatbush · H3 · Comlink (Web
+                  Worker) · Recharts · Tailwind · Zustand · OSRM/Overpass
+                </p>
+              </div>
+
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-ink-subtle mb-2">
+                  {STRINGS.provenance.title}
+                </div>
+                <ProvenanceTable />
+                <p className="mt-3 text-xs text-ink-subtle leading-relaxed">
+                  {STRINGS.provenance.tagline}
                 </p>
               </div>
 
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-ink-subtle mb-1">
-                  Catatan
+                  Kredit Data
                 </div>
-                <p>{STRINGS.about.disclaimer}</p>
+                <p>
+                  Batas administrasi GADM · Jaringan jalan & fitur OSM ©
+                  OpenStreetMap contributors · KKOP &amp; kawasan cagar budaya =
+                  aproksimasi (bukan poligon resmi).
+                </p>
               </div>
             </div>
           </motion.div>

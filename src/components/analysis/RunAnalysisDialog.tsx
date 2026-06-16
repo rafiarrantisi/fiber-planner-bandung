@@ -6,13 +6,27 @@ import { STRINGS } from '@/lib/i18n-strings'
 import { useRunAnalysis } from '@/hooks/useAnalysis'
 
 const STEPS: { key: AnalysisStep; label: string }[] = [
-  { key: 'buffer', label: STRINGS.analysis.steps.buffer },
-  { key: 'classify', label: STRINGS.analysis.steps.classify },
-  { key: 'cluster', label: STRINGS.analysis.steps.cluster },
-  { key: 'stats', label: STRINGS.analysis.steps.stats },
+  { key: 'buffer', label: STRINGS.pipeline.buffer },
+  { key: 'classify', label: STRINGS.pipeline.classify },
+  { key: 'cluster', label: STRINGS.pipeline.cluster },
+  { key: 'topology', label: STRINGS.pipeline.topology },
+  { key: 'demand', label: STRINGS.pipeline.demand },
+  { key: 'capex', label: STRINGS.pipeline.capex },
+  { key: 'stats', label: STRINGS.pipeline.stats },
 ]
 
-const ORDER: AnalysisStep[] = ['idle', 'buffer', 'classify', 'cluster', 'stats', 'done']
+const ORDER: AnalysisStep[] = [
+  'idle',
+  'buffer',
+  'classify',
+  'cluster',
+  'route',
+  'topology',
+  'demand',
+  'capex',
+  'stats',
+  'done',
+]
 
 interface Props {
   open: boolean

@@ -47,10 +47,25 @@ export function getSupplyIcon(type: SupplyType): L.DivIcon {
   })
 }
 
-export function clusterCentroidIcon(count: number): L.DivIcon {
+export const PHASE_COLORS: Record<1 | 2 | 3, string> = {
+  1: '#16a34a',
+  2: '#2563eb',
+  3: '#94a3b8',
+}
+
+export function clusterCentroidIcon(
+  count: number,
+  warn = false,
+  phaseColor?: string,
+): L.DivIcon {
+  const cls = warn ? 'cluster-centroid cc-warn' : 'cluster-centroid'
+  const badge = warn ? '<span class="cc-badge">!</span>' : ''
+  const dotStyle = phaseColor
+    ? ` style="background:${phaseColor};box-shadow:0 2px 6px ${phaseColor}80"`
+    : ''
   return L.divIcon({
-    className: 'cluster-centroid',
-    html: `<div class="cc-wrap"><span class="cc-pulse"></span><span class="cc-dot">${count}</span></div>`,
+    className: cls,
+    html: `<div class="cc-wrap"><span class="cc-pulse"></span><span class="cc-dot"${dotStyle}>${count}</span>${badge}</div>`,
     iconSize: [44, 44],
     iconAnchor: [22, 22],
   })

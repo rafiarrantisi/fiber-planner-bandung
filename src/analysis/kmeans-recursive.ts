@@ -5,7 +5,13 @@ import {
   KMEANS_MAX_DEPTH,
   KMEANS_MAX_DIST_M,
   KMEANS_SEED,
+  ODP_PORT_CAPACITY,
 } from '@/lib/constants'
+
+/** Pilih kapasitas port ODP (8 atau 16) sesuai jumlah anggota cluster. */
+function portCapacityFor(size: number): number {
+  return size <= 8 ? 8 : ODP_PORT_CAPACITY
+}
 
 function haversineM(a: [number, number], b: [number, number]): number {
   return turf.distance(turf.point(a), turf.point(b), { units: 'meters' })
@@ -51,12 +57,21 @@ function computeCentroid(points: PoI[]): { lat: number; lng: number } {
   return { lat: lat / points.length, lng: lng / points.length }
 }
 
+/** Leaf valid bila radius ≤ batas DAN ukuran ≤ kapasitas port. */
+function isLeaf(points: PoI[]): boolean {
+  if (points.length <= 1) return true
+  if (points.length > ODP_PORT_CAPACITY) return false
+  return maxInternalDistance(points) <= KMEANS_MAX_DIST_M
+}
+
 function splitKMeans(points: PoI[], k: number, depth: number): PoI[][] {
   if (points.length <= 1 || depth > KMEANS_MAX_DEPTH) return [points]
-  const maxD = maxInternalDistance(points)
-  if (maxD <= KMEANS_MAX_DIST_M) return [points]
+  // Split bila radius melebihi batas ATAU ukuran melebihi kapasitas port.
+  if (isLeaf(points)) return [points]
 
-  const actualK = Math.max(2, Math.min(k, points.length))
+  // k cukup untuk memenuhi batas kapasitas (capacity-aware), min 2.
+  const capacityK = Math.ceil(points.length / ODP_PORT_CAPACITY)
+  const actualK = Math.max(2, Math.min(Math.max(k, capacityK), points.length))
   const data = points.map((p) => [p.lng, p.lat])
   const result = kmeans(data, actualK, {
     seed: KMEANS_SEED + depth,
@@ -72,7 +87,7 @@ function splitKMeans(points: PoI[], k: number, depth: number): PoI[][] {
   const output: PoI[][] = []
   for (const g of groups) {
     if (g.length === 0) continue
-    if (g.length <= 2 || maxInternalDistance(g) <= KMEANS_MAX_DIST_M) {
+    if (g.length <= 2 || isLeaf(g)) {
       output.push(g)
     } else {
       output.push(...splitKMeans(g, 2, depth + 1))
@@ -123,6 +138,7 @@ export function recursiveKMeansByCity(
       const totalRevenue = group.reduce((a, p) => a + p.monthlyRevenueIdr, 0)
       const nearest = nearestSupply(centroid, supply)
       const id = `cluster-${city}-${String(idx + 1).padStart(3, '0')}`
+      const portCapacity = portCapacityFor(group.length)
 
       clusters.push({
         id,
@@ -134,6 +150,10 @@ export function recursiveKMeansByCity(
         maxInternalDistanceM: maxInternalDistance(group),
         nearestSupplyId: nearest.id,
         distanceToNearestSupplyM: nearest.distanceM,
+        // capacity-aware (pilar #3)
+        portCapacity,
+        assignedPoiCount: group.length,
+        capacityUtil: group.length / portCapacity,
       })
 
       for (const p of group) idByPoi.set(p.id, id)
